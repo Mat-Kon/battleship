@@ -1,18 +1,24 @@
-type HeaderType = 'reg' | 'create_room' | 'update_winners' | 'update_room';
-type Winner = {
-  name: string,
-  wins: number,
-}
+type ResponseHeaderType = 'reg' | 'update_winners' | 'update_room' | 'create_game' | 'start_game' | 'turn' | 'attack' | 'finish';
+
+type RequestHeaderType = 'reg' | 'create_room' | 'add_user_to_room';
+
 type RoomUser = {
   name: string,
   index: number,
 }
-export type DataUpdateRoom = {
-  roomId: number,
-  roomUsers: RoomUser[] | [],
+
+export type Winner = {
+  name: string,
+  wins: number,
 }
 
-export type DataPlayer = {
+//data
+export type DataUpdateRoom = {
+  roomId: number,
+  roomUsers: RoomUser[],
+}
+
+export type DataNewPlayer = {
   name: string,
   password?: string,
   index: number,
@@ -20,8 +26,14 @@ export type DataPlayer = {
   errorText: string,
 }
 
+export type DataGame = {
+  idGame: number,
+  idPlayer: number,
+}
+
+//request
 export interface ReqPlayer {
-  type: HeaderType,
+  type: RequestHeaderType,
   data: {
     name: string,
     password: string,
@@ -29,26 +41,35 @@ export interface ReqPlayer {
   id: number,
 }
 
-export type NewPlayer = {
-  type: HeaderType,
-  data: DataPlayer,
+export type RequestAddPlayerToRoom = {
+  type: RequestHeaderType,
+  data: {
+    indexRoom: number,
+  },
   id: number,
 }
 
-export type ResPlayer = {
-  type: HeaderType,
-  data: string,
-  id: number,
+//response
+export type ResWinners<Data> = {
+  type: ResponseHeaderType,
+  data: Data,
+  id: 0,
 }
 
-export interface ResRoom<Data> {
-  type: HeaderType,
+export type NewPlayer<Data> = {
+  type: ResponseHeaderType,
   data: Data,
   id: number,
 }
 
-export type ReqWinners = {
-  type: HeaderType,
-  data: Winner[] | string,
-  id: 0,
+export type ResRoom<Data> = {
+  type: ResponseHeaderType,
+  data: Data,
+  id: number,
+}
+
+export type ResCreateGame<Data> = {
+  type: ResponseHeaderType,
+  data: Data,
+  id: number,
 }

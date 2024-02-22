@@ -1,12 +1,10 @@
-import { NewPlayer, ReqPlayer, ResPlayer } from "../../types/types";
+import { DataNewPlayer, NewPlayer, ReqPlayer } from "../../types/types";
 import { type WebSocket } from 'ws';
 import { hashPassword, parseJSONRecursion } from "../utils/helperFunctions";
-
-const PLAYERS_DATA: NewPlayer[] = [];
+import { PLAYERS } from "../db";
 
 const handlerPlayers = (data: string, ws: WebSocket): void => {
   const parseData = parseJSONRecursion<ReqPlayer>(data);
-  let resPlayer: ResPlayer;
 
   try {
     const newPlayer = createPlayer(parseData);
@@ -14,7 +12,10 @@ const handlerPlayers = (data: string, ws: WebSocket): void => {
     delete newPlayer.data.password;
 
     const toStringPlayerData = JSON.stringify(newPlayer.data);
-    resPlayer = { ...newPlayer,  data: toStringPlayerData}
+    const resPlayer: NewPlayer<string> = {
+      ...newPlayer,
+      data: toStringPlayerData
+    }
     const response = JSON.stringify(resPlayer);
 
     ws.send(response);
@@ -24,15 +25,15 @@ const handlerPlayers = (data: string, ws: WebSocket): void => {
 };
 
 
-function createPlayer(data: ReqPlayer): NewPlayer {
+function createPlayer(data: ReqPlayer): NewPlayer<DataNewPlayer> {
   const id = Date.now();
   const password = hashPassword(data.data.password);
-  const reqPlayer: NewPlayer = {
+  const reqPlayer: NewPlayer<DataNewPlayer> = {
     type: 'reg',
     data: {
       name: data.data.name,
       password,
-      index: PLAYERS_DATA.length,
+      index: PLAYERS.length,
       error: false,
       errorText: '',
     },
@@ -41,8 +42,8 @@ function createPlayer(data: ReqPlayer): NewPlayer {
   return reqPlayer;
 };
 
-function addPlayersInData(player: NewPlayer): void {
-  PLAYERS_DATA.push(player);
+function addPlayersInData(player: NewPlayer<DataNewPlayer>): void {
+  PLAYERS.push(player);
 }
 
 export { handlerPlayers }
