@@ -1,10 +1,26 @@
-type HeaderType = 'reg' | 'create_room' | 'update_winners';
+type HeaderType = 'reg' | 'create_room' | 'update_winners' | 'update_room';
 type Winner = {
   name: string,
   wins: number,
 }
+type RoomUser = {
+  name: string,
+  index: number,
+}
+export type DataUpdateRoom = {
+  roomId: number,
+  roomUsers: RoomUser[] | [],
+}
 
-export type ReqPlayer = {
+export type DataPlayer = {
+  name: string,
+  password?: string,
+  index: number,
+  error: boolean,
+  errorText: string,
+}
+
+export interface ReqPlayer {
   type: HeaderType,
   data: {
     name: string,
@@ -15,18 +31,19 @@ export type ReqPlayer = {
 
 export type NewPlayer = {
   type: HeaderType,
-  data: {
-    name: string,
-    index: number,
-    error: boolean,
-    errorText: string,
-  } | string,
+  data: DataPlayer,
   id: number,
 }
 
-export type ReqNewRoom = {
+export type ResPlayer = {
   type: HeaderType,
   data: string,
+  id: number,
+}
+
+export interface ResRoom<Data> {
+  type: HeaderType,
+  data: Data,
   id: number,
 }
 

@@ -1,4 +1,6 @@
-function parseJSONRecursion(jsonString: string) {
+import crypto from 'crypto';
+
+function parseJSONRecursion<T>(jsonString: string): T {
   try {
     const outerObject = JSON.parse(jsonString);
 
@@ -8,7 +10,7 @@ function parseJSONRecursion(jsonString: string) {
           try {
             obj[key] = JSON.parse(obj[key]);
           } catch (error) {
-            return;
+            console.log('parse end');
           }
         } else if (typeof obj[key] === 'object') {
           parseNestedObjects(obj[key]);
@@ -20,9 +22,15 @@ function parseJSONRecursion(jsonString: string) {
 
     return outerObject;
   } catch (error) {
-    console.error('error parse JSON:', error);
-    return null;
+    throw new Error(`error parse JSON: ${error}`);
   }
 };
 
-export { parseJSONRecursion }
+const hashPassword = (password: string) => {
+  const hash = crypto.createHash('SHA256');
+  hash.update(password);
+  const hashPassword = hash.digest('hex');
+  return hashPassword;
+};
+
+export { parseJSONRecursion, hashPassword }

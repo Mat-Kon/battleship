@@ -1,13 +1,23 @@
-import { NewPlayer, ReqPlayer } from "../../types/types";
+import { NewPlayer, ReqPlayer, ResPlayer } from "../../types/types";
 import { type WebSocket } from 'ws';
+import { hashPassword, parseJSONRecursion } from "../utils/helperFunctions";
 
-const handlerPlayers = (data: ReqPlayer, playersData: NewPlayer[], ws: WebSocket) => {
+const PLAYERS_DATA: NewPlayer[] = [];
+
+const handlerPlayers = (data: string, ws: WebSocket): void => {
+  const parseData = parseJSONRecursion<ReqPlayer>(data);
+  let resPlayer: ResPlayer;
+
   try {
-    const newPlayer = createPlayer(data);
-    addPlayersInData(newPlayer, playersData);
-    newPlayer.data = JSON.stringify(newPlayer.data);
-    const respPlayer = JSON.stringify(newPlayer);
-    ws.send(respPlayer);
+    const newPlayer = createPlayer(parseData);
+    addPlayersInData(newPlayer);
+    delete newPlayer.data.password;
+
+    const toStringPlayerData = JSON.stringify(newPlayer.data);
+    resPlayer = { ...newPlayer,  data: toStringPlayerData}
+    const response = JSON.stringify(resPlayer);
+
+    ws.send(response);
   } catch(error) {
     console.error(`Error send new player: ${error}`);
   }
@@ -15,29 +25,24 @@ const handlerPlayers = (data: ReqPlayer, playersData: NewPlayer[], ws: WebSocket
 
 
 function createPlayer(data: ReqPlayer): NewPlayer {
+  const id = Date.now();
+  const password = hashPassword(data.data.password);
   const reqPlayer: NewPlayer = {
     type: 'reg',
     data: {
       name: data.data.name,
-      index: 0,
+      password,
+      index: PLAYERS_DATA.length,
       error: false,
       errorText: '',
     },
-    id: 0,
+    id,
   };
   return reqPlayer;
 };
 
-function addPlayersInData(player: NewPlayer, playersData: NewPlayer[]) {
-  const isTwoPlayers = playersData.length === 2;
-
-  if (isTwoPlayers) {
-    throw new Error('The maximum number of players has been created');
-  }
-
-  if (playersData.length < 2 ) {
-    playersData.push(player);
-  }
+function addPlayersInData(player: NewPlayer): void {
+  PLAYERS_DATA.push(player);
 }
 
 export { handlerPlayers }
