@@ -1,15 +1,34 @@
 type ResponseHeaderType = 'reg' | 'update_winners' | 'update_room' | 'create_game' | 'start_game' | 'turn' | 'attack' | 'finish';
 
-type RequestHeaderType = 'reg' | 'create_room' | 'add_user_to_room';
+type RequestHeaderType = 'reg' | 'create_room' | 'add_user_to_room' | 'add_ships';
 
-type RoomUser = {
+export type RoomUser = {
   name: string,
   index: number,
+  ships?: Ship[];
 }
 
 export type Winner = {
   name: string,
   wins: number,
+}
+
+type Position = {
+  x: number;
+  y: number;
+}
+
+export type Ship = {
+  position: Position;
+  direction: boolean;
+  length: number;
+  type: 'small' | 'medium' | 'large' | 'huge';
+}
+
+export type Game = {
+  id: number;
+  players: RoomUser[];
+  currentPlayerIndex: number;
 }
 
 //data
@@ -47,6 +66,16 @@ export type RequestAddPlayerToRoom = {
     indexRoom: number,
   },
   id: number,
+}
+
+export type RequestAddShips = {
+  type: RequestHeaderType,
+  data: {
+    gameId: number,
+    ships: Ship[],
+    indexPlayer: number
+  },
+  id: number
 }
 
 //response

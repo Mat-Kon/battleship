@@ -1,7 +1,7 @@
 import { type WebSocket } from 'ws';
-import { DataNewPlayer, DataUpdateRoom, NewPlayer, ResRoom, ResWinners, Winner } from "../types/types";
+import { DataNewPlayer, DataUpdateRoom, Game, NewPlayer, ResRoom, ResWinners, Winner } from "../types/types";
 
-const PLAYERS_WS: WebSocket[] = [];
+const PLAYERS_WS: Record<string, WebSocket> = {};;
 
 const PLAYERS: NewPlayer<DataNewPlayer>[] = [];
 
@@ -17,9 +17,12 @@ const WINNERS: ResWinners<Winner[]> = {
   id: 0
 };
 
+const GAMES: Game[] = [];
+
 export {
   PLAYERS_WS,
   PLAYERS,
   GAME_ROOMS,
-  WINNERS
+  WINNERS,
+  GAMES
 }

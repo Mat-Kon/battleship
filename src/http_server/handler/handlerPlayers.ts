@@ -3,11 +3,11 @@ import { type WebSocket } from 'ws';
 import { hashPassword, parseJSONRecursion } from "../utils/helperFunctions";
 import { PLAYERS } from "../db";
 
-const handlerPlayers = (data: string, ws: WebSocket): void => {
+const handlerPlayers = (data: string, id: number, ws: WebSocket): void => {
   const parseData = parseJSONRecursion<ReqPlayer>(data);
 
   try {
-    const newPlayer = createPlayer(parseData);
+    const newPlayer = createPlayer(parseData, id);
     addPlayersInData(newPlayer);
     delete newPlayer.data.password;
 
@@ -25,15 +25,14 @@ const handlerPlayers = (data: string, ws: WebSocket): void => {
 };
 
 
-function createPlayer(data: ReqPlayer): NewPlayer<DataNewPlayer> {
-  const id = Date.now();
+function createPlayer(data: ReqPlayer, id: number): NewPlayer<DataNewPlayer> {
   const password = hashPassword(data.data.password);
   const reqPlayer: NewPlayer<DataNewPlayer> = {
     type: 'reg',
     data: {
       name: data.data.name,
       password,
-      index: PLAYERS.length,
+      index: id,
       error: false,
       errorText: '',
     },

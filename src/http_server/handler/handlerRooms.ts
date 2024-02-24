@@ -1,89 +1,77 @@
-import { type WebSocket } from 'ws';
-import { DataGame, DataUpdateRoom, RequestAddPlayerToRoom, ResCreateGame, ResRoom } from "../../types/types";
+import { DataUpdateRoom, RequestAddPlayerToRoom, ResRoom, RoomUser } from "../../types/types";
 import { PLAYERS_WS, GAME_ROOMS, PLAYERS } from '../db';
 import { parseJSONRecursion } from '../utils/helperFunctions';
 
-const handlerRooms = (data: string, ws: WebSocket) => {
+const handlerRooms = (data: string, id: number) => {
   const typeRequest: any = JSON.parse(data).type;
 
   switch (typeRequest) {
     case 'reg':
-      sendGameRooms(GAME_ROOMS, ws);
+      sendGameRooms(GAME_ROOMS);
       break;
     case 'create_room':
-      const newRoom = createRoom();
+      const newRoom = createRoomWithUser(id);
       addRoom(newRoom);
-      sendGameRooms(GAME_ROOMS, ws);
+      sendGameRooms(GAME_ROOMS);
       break;
     case 'add_user_to_room':
-      addPlayerInRoom(data);
-      sendGameRooms(GAME_ROOMS, ws);
-      sendCreateGame(ws);
+      addPlayerInRoom(data, id);
+      sendGameRooms(GAME_ROOMS);
   }
 };
 
-function sendGameRooms(gameRooms: ResRoom<DataUpdateRoom[]>, ws: WebSocket): void {
+function sendGameRooms(gameRooms: ResRoom<DataUpdateRoom[]>, id?: number): void {
   const stringifyData = JSON.stringify(gameRooms.data);
   const updateRooms: ResRoom<string> = {
     ...gameRooms,
     data: stringifyData
   };
-  return PLAYERS_WS.forEach((player) => player.send(JSON.stringify(updateRooms)));
-}
 
-function createRoom(): DataUpdateRoom {
-  const roomId = Date.now();
-
-  const newRoom = {
-    roomId,
-    roomUsers: [],
-  };
-
-  return newRoom;
-}
-
-function addRoom(room: DataUpdateRoom) {
-  (GAME_ROOMS.data).push(room)
-}
-
-function addPlayerInRoom(data: string) {
-  const player = { ...PLAYERS.at(-1)?.data };
-  const parseData: RequestAddPlayerToRoom = parseJSONRecursion(data);
-  const { indexRoom } = parseData.data;
-  const room = GAME_ROOMS.data.find((room) => room.roomId === indexRoom);
-
-  room?.roomUsers.push({ name: player.name!, index: player.index! });
-}
-
-function createGame(): ResCreateGame<DataGame> | null {
-  if (PLAYERS.length >= 2) {
-    const idGame = Date.now();
-    const idPlayer = PLAYERS.at(-1)?.id!;
-    const id = Date.now();
-
-    const game: ResCreateGame<DataGame> = {
-      type: 'create_game',
-      data: {
-        idGame,
-        idPlayer,
-      },
-      id,
+  gameRooms.data.forEach((room) => {
+    if (room) {
+      room.roomUsers.forEach((user) => {
+        PLAYERS_WS[user.index].send(JSON.stringify(updateRooms))
+      });
     }
-    return game;
-  } else {
-    return null;
+  });
+
+  for (let player in PLAYERS_WS) {
+    PLAYERS_WS[player].send(JSON.stringify(updateRooms));
   }
 }
 
-function sendCreateGame(ws: WebSocket): void {
-  const newGame = createGame();
-  if (newGame) {
-    const stringifyData = JSON.stringify(newGame.data);
-    const resGame: ResCreateGame<string> = {
-      ...newGame,
-      data: stringifyData
+function createRoomWithUser(id: number): DataUpdateRoom | null {
+  const roomId = Date.now();
+  const player = PLAYERS.find((user) => user.id === id);
+  if (player) {
+    const roomUser: RoomUser = {
+      name: player.data.name,
+      index: player.id,
     }
-    return PLAYERS_WS.forEach((player) => player.send(JSON.stringify(resGame)));
+
+    const newRoom = {
+      roomId,
+      roomUsers: [roomUser],
+    };
+    return newRoom;
+  }
+  return null
+}
+
+function addRoom(room: DataUpdateRoom | null) {
+  if (room) {
+    (GAME_ROOMS.data).push(room)
+  }
+}
+
+function addPlayerInRoom(data: string, id: number) {
+  const player = PLAYERS.find((player) => player.id === id);
+  const parseData: RequestAddPlayerToRoom = parseJSONRecursion(data);
+  const { indexRoom } = parseData.data;
+  const room = GAME_ROOMS.data.find((room) => room.roomId === indexRoom);
+  
+  if (room && player) {
+    room.roomUsers.push({ name: player.data.name, index: player.data.index });
   }
 }
 

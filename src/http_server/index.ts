@@ -6,6 +6,8 @@ import { handlerPlayers } from './handler/handlerPlayers';
 import { handlerRooms } from './handler/handlerRooms';
 import { PLAYERS_WS } from './db';
 import { handlerWinners } from './handler/handlerWiiners';
+import { handlerGame } from './handler/handlerGame';
+import { parseJSONRecursion } from './utils/helperFunctions';
 
 export const httpServer = http.createServer(function (req, res) {
   const __dirname = path.resolve(path.dirname(''));
@@ -25,23 +27,34 @@ export const httpServer = http.createServer(function (req, res) {
 const wss = new WebSocketServer({ port: 3000 });
 
 wss.on('connection', function connection(ws) {
+  const id = Date.now();
+  PLAYERS_WS[id] = ws;
+
   ws.on('error', console.error);
   console.log('New connected');
-  PLAYERS_WS.push(ws);
 
   ws.on('message', function message(data: string) {
     const typeRequest: any = JSON.parse(data).type;
+    console.log(typeRequest)
 
-    switch(typeRequest) {
+    switch (typeRequest) {
       case 'reg':
-        handlerPlayers(data, ws);
-        handlerRooms(data, ws);
+        handlerPlayers(data, id, ws);
+        handlerRooms(data, id);
         handlerWinners(data, ws);
         break;
       case 'create_room':
       case 'add_user_to_room':
-        handlerRooms(data, ws);
+        handlerRooms(data, id);
+        handlerGame(data);
         break;
+      case 'add_ships':
+        handlerGame(data);
     };
+  });
+
+  // ws.close();
+  ws.on('close', () => {
+    console.log('Player disconnected');
   });
 });
